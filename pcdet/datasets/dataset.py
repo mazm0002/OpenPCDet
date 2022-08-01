@@ -124,12 +124,12 @@ class DatasetTemplate(torch_data.Dataset):
             assert 'gt_boxes' in data_dict, 'gt_boxes should be provided for training'
             gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
 
-            data_dict = self.data_augmentor.forward(
-                data_dict={
-                    **data_dict,
-                    'gt_boxes_mask': gt_boxes_mask
-                }
-            )
+            # data_dict = self.data_augmentor.forward(
+            #     data_dict={
+            #         **data_dict,
+            #         'gt_boxes_mask': gt_boxes_mask
+            #     }
+            # )
 
         if data_dict.get('gt_boxes', None) is not None:
             selected = common_utils.keep_arrays_by_name(data_dict['gt_names'], self.class_names)
@@ -162,7 +162,8 @@ class DatasetTemplate(torch_data.Dataset):
         data_dict = defaultdict(list)
         for cur_sample in batch_list:
             for key, val in cur_sample.items():
-                data_dict[key].append(val)
+                if key != 'tracker_id':
+                    data_dict[key].append(val)
         batch_size = len(batch_list)
         ret = {}
 
