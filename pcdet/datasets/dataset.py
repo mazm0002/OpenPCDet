@@ -9,7 +9,7 @@ from .augmentor.data_augmentor import DataAugmentor
 from .processor.data_processor import DataProcessor
 from .processor.point_feature_encoder import PointFeatureEncoder
 
-
+import open3d as o3d
 class DatasetTemplate(torch_data.Dataset):
     def __init__(self, dataset_cfg=None, class_names=None, training=True, root_path=None, logger=None):
         super().__init__()
@@ -145,9 +145,30 @@ class DatasetTemplate(torch_data.Dataset):
         if data_dict.get('points', None) is not None:
             data_dict = self.point_feature_encoder.forward(data_dict)
 
+
+
+
         data_dict = self.data_processor.forward(
             data_dict=data_dict
         )
+
+        ########### PC debug ###################
+        # print(data_dict['gt_boxes'].shape)
+        # print(data_dict['gt_boxes'].shape)
+        # exit()
+        # boxes = data_dict['gt_boxes'][:,:7]
+        # pc = o3d.geometry.PointCloud()
+        # pc.points = o3d.utility.Vector3dVector(data_dict['points'][:,:3])
+        # geo = [pc]
+        #
+        # bbox_corners = box_to_3d_corners(boxes)
+        # for box_corner in bbox_corners:
+        #     geo.append(build_3d_boxes(box_corner))
+        # o3d.visualization.draw_geometries(geo)
+        #
+        # exit()
+        ##############################
+
 
         if self.training and len(data_dict['gt_boxes']) == 0:
             new_index = np.random.randint(self.__len__())
@@ -228,3 +249,50 @@ class DatasetTemplate(torch_data.Dataset):
 
         ret['batch_size'] = batch_size
         return ret
+
+
+def box_to_3d_corners(bboxes):
+    # boxes: (N, 7): including x, y, z, w, l, h, rot
+    ''' Draw 3d bounding box in image
+        qs: (8,3) array of vertices for the 3d box in following order:
+            1 -------- 0
+           /|         /|
+          2 -------- 3 .
+          | |        | |
+          . 5 -------- 4
+          |/         |/
+          6 -------- 7
+    '''
+    rotated_bboxes = []
+    for box in bboxes:
+        x, y, z, l, w, h, rot = box
+        x_corners = [-l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2]
+        y_corners = [w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2]
+        z_corners = [h / 2, h / 2, h / 2, h / 2, -h / 2, -h / 2, -h / 2, -h / 2]
+        stacked_corners = np.vstack([x_corners, y_corners, z_corners]).T
+        rotated_box = np.matmul(stacked_corners, rotz(rot))
+        rotated_box = rotated_box + [x, y, z]
+        rotated_bboxes.append(rotated_box)
+    return np.asarray(rotated_bboxes)
+def build_3d_boxes(points, color=(1, 0, 0)):
+    # points shape: (8,3)
+    # points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1],
+    #           [0, 1, 1], [1, 1, 1]] x0y0z0, x0y0z1, x0y1z0, x0y1z1, x1y0z0, x1y0z1, x1y1z0, x1y1z1
+    points = points[[5, 6, 4, 7, 1, 2, 0, 3], :]
+    lines = [[0, 1], [0, 2], [1, 3], [2, 3], [4, 5], [4, 6], [5, 7], [6, 7],
+             [0, 4], [1, 5], [2, 6], [3, 7], [0, 6], [2, 4]]
+    colors = [color for i in range(len(lines))]
+    line_set = o3d.geometry.LineSet()
+
+    line_set.lines = o3d.utility.Vector2iVector(lines)
+    line_set.points = o3d.utility.Vector3dVector(points)
+    line_set.colors = o3d.utility.Vector3dVector(colors)
+
+    return line_set
+def rotz(t):
+    ''' Rotation about the z-axis. '''
+    c = np.cos(t)
+    s = np.sin(t)
+    return np.array([[c, -s, 0],
+                     [s, c, 0],
+                     [0, 0, 1]])

@@ -91,7 +91,7 @@ class DataBaseSampler(object):
             pre_len = len(dinfos)
             new_db_infos[key] = [
                 info for info in dinfos
-                if info['difficulty'] not in removed_difficulty
+                # if info['difficulty'] not in removed_difficulty
             ]
             if self.logger is not None:
                 self.logger.info('Database filter by difficulty %s: %d => %d' % (key, pre_len, len(new_db_infos[key])))
@@ -177,7 +177,9 @@ class DataBaseSampler(object):
                 start_offset, end_offset = info['global_data_offset']
                 obj_points = copy.deepcopy(gt_database_data[start_offset:end_offset])
             else:
+                # print(info)
                 file_path = self.root_path / info['path']
+                # obj_points = np.fromfile(str(file_path), dtype=np.float32)
                 obj_points = np.fromfile(str(file_path), dtype=np.float32).reshape(
                     [-1, self.sampler_cfg.NUM_POINT_FEATURES])
 
