@@ -131,6 +131,8 @@ class DataBaseSampler(object):
         pointer += sample_num
         sample_group['pointer'] = pointer
         sample_group['indices'] = indices
+        # print(sampled_dict)
+        # exit()
         return sampled_dict
 
     @staticmethod

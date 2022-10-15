@@ -14,6 +14,7 @@ from ..dataset import DatasetTemplate
 from ...ops.roiaware_pool3d import roiaware_pool3d_utils
 from ...utils import box_utils, common_utils
 from pathlib import Path
+import open3d as o3d
 
 
 class mydataDataset(DatasetTemplate):
@@ -85,10 +86,10 @@ class mydataDataset(DatasetTemplate):
             one_road_path = self.root_path  # one_road_path /home/algo-4/work/ST3D/data/mydata/label
             for one_folder in folder_list:
                 if one_folder == 'lidar':
-                    pcd_path = '/home/lab/CUDA-PointPillars/OpenPCDet/data/Munir/lidar'
+                    pcd_path = '/home/lab/CUDA-PointPillars/OpenPCDet/data/Munir&skidpad_33/lidar'
 
                 if one_folder == 'label':
-                    label_path = '/home/lab/CUDA-PointPillars/OpenPCDet/data/Munir/label'  # #/home/algo-4/work/ST3D/data/mydata/label
+                    label_path = '/home/lab/CUDA-PointPillars/OpenPCDet/data/Munir&skidpad_33/label'  # #/home/algo-4/work/ST3D/data/mydata/label
 
             # get all lidar files
             pcd_files = self.get_folder_list(pcd_path)
@@ -200,7 +201,9 @@ class mydataDataset(DatasetTemplate):
         # pcd point cloud to np.array
         single_pcd_points = single_pcd_points.pc_data.copy()
         single_pcd_points_np = np.array([list(single_pcd_points) for single_pcd_points in single_pcd_points])
-        single_pcd_points_np = single_pcd_points_np[:,:4]
+        # print('before norm:', single_pcd_points_np[1])
+        single_pcd_points_np[:, 3] = single_pcd_points_np[:, 3] / single_pcd_points_np[:, 3].max()
+        # print('after norm', single_pcd_points_np[1])
         single_pcd_points_np = self.remove_nan_data(single_pcd_points_np)
 
         return single_pcd_points_np
@@ -335,6 +338,23 @@ class mydataDataset(DatasetTemplate):
                 # The first three columns of data for each of #gt_points
                 # Subtract the position information of the first three columns of the current object in gt_boxes
                 gt_points[:, :3] -= gt_boxes[i, :3]
+
+                # print(data_dict['gt_boxes'].shape)
+                # print(data_dict['gt_boxes'].shape)
+                # exit()
+                # boxes = data_dict['gt_boxes'][:,:7]
+                # pc = o3d.geometry.PointCloud()
+                # pc.points = o3d.utility.Vector3dVector(gt_points[:, :3])
+                # geo = [pc]
+                #
+                # # bbox_corners = box_to_3d_corners(boxes)
+                # # for box_corner in bbox_corners:
+                # #     geo.append(build_3d_boxes(box_corner))
+                # o3d.visualization.draw_geometries(geo)
+
+                # exit()
+
+
 
                 # Write the information of gt_points to the file
 
@@ -565,6 +585,6 @@ if __name__ == '__main__':
         create_mydata_infos(
             dataset_cfg=dataset_cfg,
             class_names=class_names,
-            data_path=ROOT_DIR / 'data' / 'Munir',
-            save_path=ROOT_DIR / 'data' / 'Munir'
+            data_path=ROOT_DIR / 'data' / 'Munir&skidpad_33',
+            save_path=ROOT_DIR / 'data' / 'Munir&skidpad_33'
         )

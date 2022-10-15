@@ -124,16 +124,24 @@ class DatasetTemplate(torch_data.Dataset):
             assert 'gt_boxes' in data_dict, 'gt_boxes should be provided for training'
             gt_boxes_mask = np.array([n in self.class_names for n in data_dict['gt_names']], dtype=np.bool_)
 
-            # data_dict = self.data_augmentor.forward(
-            #     data_dict={
-            #         **data_dict,
-            #         'gt_boxes_mask': gt_boxes_mask
-            #     }
-            # )
+            data_dict = self.data_augmentor.forward(
+                data_dict={
+                    **data_dict,
+                    'gt_boxes_mask': gt_boxes_mask
+                }
+            )
 
+        # if data_dict.get('gt_boxes', None) is not None:
+        # print(np.any(data_dict['gt_boxes']))
+        # if np.any(data_dict['gt_boxes']) and data_dict.get('gt_boxes', None) is not None:
         if data_dict.get('gt_boxes', None) is not None:
+
             selected = common_utils.keep_arrays_by_name(data_dict['gt_names'], self.class_names)
-            data_dict['gt_boxes'] = data_dict['gt_boxes'][selected]
+            try:
+                data_dict['gt_boxes'] = data_dict['gt_boxes'][selected]
+            except IndexError:
+                print('gt_boxes error', data_dict.get('gt_boxes', None))
+                exit()
             data_dict['gt_names'] = data_dict['gt_names'][selected]
             gt_classes = np.array([self.class_names.index(n) + 1 for n in data_dict['gt_names']], dtype=np.int32)
             gt_boxes = np.concatenate((data_dict['gt_boxes'], gt_classes.reshape(-1, 1).astype(np.float32)), axis=1)

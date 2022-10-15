@@ -24,6 +24,7 @@ class DataAugmentor(object):
             self.data_augmentor_queue.append(cur_augmentor)
     
     def gt_sampling(self, config=None):
+
         db_sampler = database_sampler.DataBaseSampler(
             root_path=self.root_path,
             sampler_cfg=config,

@@ -36,6 +36,7 @@ def get_coor_colors(obj_labels):
 
 
 def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scores=None, point_colors=None, draw_origin=True):
+    print("first points", points)
     if isinstance(points, torch.Tensor):
         points = points.cpu().numpy()
     if isinstance(gt_boxes, torch.Tensor):
@@ -59,7 +60,13 @@ def draw_scenes(points, gt_boxes=None, ref_boxes=None, ref_labels=None, ref_scor
 
     vis.add_geometry(pts)
     if point_colors is None:
-        pts.colors = open3d.utility.Vector3dVector(np.ones((points.shape[0], 3)))
+        colors = np.zeros((points.shape[0], 3))
+        # reshaped_pts = points.reshape(-1, 5)
+        print(points[:,3].shape)
+        print(colors[:].shape)
+        colors[:,0] = (points[:,3]*10)**2
+        # pts.colors = open3d.utility.Vector3dVector(np.ones((points.shape[0], 3)))
+        pts.colors = open3d.utility.Vector3dVector(colors)
     else:
         pts.colors = open3d.utility.Vector3dVector(point_colors)
 
